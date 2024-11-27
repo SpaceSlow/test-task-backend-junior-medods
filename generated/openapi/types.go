@@ -9,7 +9,7 @@ import (
 
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
-	Error *string `json:"error,omitempty"`
+	Error string `json:"error"`
 }
 
 // Tokens defines model for Tokens.
