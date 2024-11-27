@@ -26,6 +26,8 @@ func RunServer() error {
 		slog.Error("failed to gracefully shutdown the service")
 	})
 
+	cfg := LoadServerConfig()
+
 	httpServer := application.SetupHTTPServer()
 	srv := &http.Server{
 		Addr:    ":8080",
@@ -37,10 +39,10 @@ func RunServer() error {
 
 	g.Go(func() error {
 		<-ctx.Done()
-		shutdownTimeoutCtx, cancelShutdownTimeoutCtx := context.WithTimeout(context.Background(), 5*time.Second)
+		shutdownTimeoutCtx, cancelShutdownTimeoutCtx := context.WithTimeout(context.Background(), cfg.MaxTimeoutShutdown)
 		defer cancelShutdownTimeoutCtx()
 		return srv.Shutdown(shutdownTimeoutCtx)
 	})
-	
+
 	return g.Wait()
 }
