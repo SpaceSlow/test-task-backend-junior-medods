@@ -12,7 +12,7 @@ paths:
       description: Получение Access и Refresh токенов для пользователя с GUID
       parameters:
         - name: guid
-          in: path
+          in: query
           required: true
           schema:
             type: string
