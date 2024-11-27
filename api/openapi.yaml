@@ -17,6 +17,7 @@ paths:
           schema:
             type: string
             format: uuid
+            example: 5af1474c-51b9-4ede-9041-87a1a3d382cb
       responses:
         '200':
           description: Успешное получение токенов
