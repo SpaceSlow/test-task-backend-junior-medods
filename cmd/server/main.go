@@ -1,23 +1,13 @@
 package main
 
 import (
-	"errors"
-	"log/slog"
-	"net/http"
+	"log"
 
-	"github.com/labstack/echo/v4"
+	"github.com/SpaceSlow/test-task-backend-junior-medods/internal"
 )
 
 func main() {
-	e := echo.New()
-
-	e.GET("/", hello)
-
-	if err := e.Start(":8080"); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		slog.Error("failed to start server", "error", err)
+	if err := internal.RunServer(); err != nil {
+		log.Printf("error: %s", err)
 	}
-}
-
-func hello(c echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
 }
