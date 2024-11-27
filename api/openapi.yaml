@@ -1,0 +1,86 @@
+openapi: 3.0.3
+info:
+  title: Часть сервиса аутентификации
+  description: Тестовое задание на позицию Junior Backend Developer компании MEDODS
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8080/api'
+paths:
+  /users/tokens:
+    get:
+      summary: Получение токенов по GUID-пользователя
+      description: Получение Access и Refresh токенов для пользователя с GUID
+      parameters:
+        - name: guid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Успешное получение токенов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokensResponse'
+        '404':
+          description: Отсутствует пользователь с заданным GUID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+  /users/refresh:
+    post:
+      summary: Получение токенов по GUID-пользователя
+      description: Получение Access и Refresh токенов для пользователя с GUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokensRequest'
+      responses:
+        '200':
+          description: Успешное получение обновленного Access токена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokensResponse'
+        '401':
+          description: Ошибки, связанные с токенами
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+components:
+  schemas:
+    TokensRequest:
+      $ref: '#/components/schemas/Tokens'
+    TokensResponse:
+      $ref: '#/components/schemas/Tokens'
+    ErrorResponse:
+      type: object
+      required:
+        - errors
+      properties:
+        error:
+          type: string
+    Tokens:
+      type: object
+      required:
+        - access
+        - refresh
+      properties:
+        access:
+          type: string
+          format: jwt
+          example: eyJhbGciOiJIUzUxMiJ9.eyJpcCI6IjEwLjEwLjEwLjEwIiwidXVpZCI6IjVhZjE0NzRjLTUxYjktNGVkZS05MDQxLTg3YTFhM2QzODJjYiIsImV4cGlyZXNfYXQiOjEyNTc4MjkyMDB9.uUDtFqQ4P45FUF29j93jQut6jdAQwKFuNOHTdH_kyTr4tXkusKX5Whc1lYEsDy12uBp8knJk4RDvHFbuq2EcEA
+        refresh:
+          type: string
+          format: base64
+          example: cmVmcmVzaF90b2tlbg==
