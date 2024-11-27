@@ -30,7 +30,7 @@ func (h UserHandlers) PostUsersRefresh(ctx echo.Context) error {
 }
 
 func (h UserHandlers) GetUsersTokens(ctx echo.Context, params openapi.GetUsersTokensParams) error {
-	access, refresh, err := h.service.Tokens(params.Guid, net.IP(ctx.RealIP()))
+	access, refresh, err := h.service.Tokens(params.Guid, net.ParseIP(ctx.RealIP()))
 
 	var errNoUser users.NoUserError
 	if errors.As(err, &errNoUser) {
