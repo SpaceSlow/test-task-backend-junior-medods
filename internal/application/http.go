@@ -11,9 +11,9 @@ type httpServer struct {
 	users.UserHandlers
 }
 
-func SetupHTTPServer() *echo.Echo {
+func SetupHTTPServer(userService UserService) *echo.Echo {
 	server := &httpServer{}
-	server.UserHandlers = users.SetupHandlers()
+	server.UserHandlers = users.SetupHandlers(userService)
 
 	router := echo.New()
 	api := router.Group("/api")

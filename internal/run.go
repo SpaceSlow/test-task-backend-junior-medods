@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os/signal"
@@ -11,6 +12,8 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/SpaceSlow/test-task-backend-junior-medods/internal/application"
+	usersrepo "github.com/SpaceSlow/test-task-backend-junior-medods/internal/infrastructure/users"
+	"github.com/SpaceSlow/test-task-backend-junior-medods/internal/service/users"
 )
 
 func RunServer() error {
@@ -28,7 +31,22 @@ func RunServer() error {
 
 	cfg := LoadServerConfig()
 
-	httpServer := application.SetupHTTPServer()
+	repo, err := usersrepo.NewPostgresRepo(ctx, cfg.DSN)
+	if err != nil {
+		return fmt.Errorf("failed to initialize a user repo: %w", err)
+	}
+	defer repo.Close()
+
+	g.Go(func() error {
+		defer slog.Info("closed user repo")
+		<-ctx.Done()
+		repo.Close()
+		return nil
+	})
+
+	userService := users.NewUserService(repo, cfg)
+
+	httpServer := application.SetupHTTPServer(userService)
 	srv := &http.Server{
 		Addr:    ":8080",
 		Handler: httpServer,
@@ -38,6 +56,7 @@ func RunServer() error {
 	})
 
 	g.Go(func() error {
+		defer slog.Info("stopped http server")
 		<-ctx.Done()
 		shutdownTimeoutCtx, cancelShutdownTimeoutCtx := context.WithTimeout(context.Background(), cfg.MaxTimeoutShutdown)
 		defer cancelShutdownTimeoutCtx()
