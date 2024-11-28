@@ -37,7 +37,7 @@ func (r *PostgresRepo) CreateRefreshToken(userGUID uuid.UUID, refresh *users.Ref
 	if err != nil {
 		return fmt.Errorf("%s: %w", method, err)
 	}
-	_, err = r.pool.Exec(r.ctx, `UPDATE users SET refresh_token=$1 WHERE id=$2`, hash, userGUID)
+	_, err = r.pool.Exec(r.ctx, `UPDATE users SET refresh_token_hash=$1 WHERE id=$2`, hash, userGUID)
 	return err
 }
 
@@ -56,7 +56,7 @@ func (r *PostgresRepo) FetchEmailByUUID(userGUID uuid.UUID) (string, error) {
 func (r *PostgresRepo) FetchUserByEmail(email string) (*users.User, error) {
 	const method = "PostgresRepo.FetchUserByEmail"
 
-	row := r.pool.QueryRow(r.ctx, `SELECT id, refresh_token FROM users WHERE email=$1`, email)
+	row := r.pool.QueryRow(r.ctx, `SELECT id, refresh_token_hash FROM users WHERE email=$1`, email)
 	var (
 		userGUID         uuid.UUID
 		refreshTokenHash string
