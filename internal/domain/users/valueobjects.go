@@ -3,6 +3,7 @@ package users
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"net"
 	"time"
 
@@ -18,6 +19,8 @@ type UserClaims struct {
 type AccessToken string
 
 func NewAccessToken(ip net.IP, tokenLifetime time.Duration, secretKey string) (*AccessToken, error) {
+	const method = "NewAccessToken"
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenLifetime)),
@@ -27,7 +30,7 @@ func NewAccessToken(ip net.IP, tokenLifetime time.Duration, secretKey string) (*
 
 	signedJWT, err := token.SignedString([]byte(secretKey))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", method, err)
 	}
 	access := AccessToken(signedJWT)
 
@@ -39,6 +42,8 @@ func (t AccessToken) String() string {
 }
 
 func (t AccessToken) IP(secretKey string) (net.IP, error) {
+	const method = "AccessToken.IP"
+
 	claims := &UserClaims{}
 	token, err := jwt.ParseWithClaims(
 		t.String(),
@@ -49,7 +54,7 @@ func (t AccessToken) IP(secretKey string) (net.IP, error) {
 		jwt.WithValidMethods([]string{"HS512"}),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", method, err)
 	}
 
 	if !token.Valid {
@@ -62,10 +67,12 @@ func (t AccessToken) IP(secretKey string) (net.IP, error) {
 type RefreshToken string
 
 func NewRefreshToken() (*RefreshToken, error) {
+	const method = "NewRefreshToken"
+
 	randomBytes := make([]byte, 128)
 	_, err := rand.Read(randomBytes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", method, err)
 	}
 	refresh := RefreshToken(base64.StdEncoding.EncodeToString(randomBytes))
 

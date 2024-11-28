@@ -2,6 +2,7 @@ package users
 
 import (
 	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 
@@ -46,6 +47,7 @@ func (h UserHandlers) PostUsersRefresh(c echo.Context) error {
 			Error: err.Error(),
 		})
 	} else if err != nil {
+		slog.Error("internal error", slog.String("error", err.Error()))
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
@@ -53,7 +55,6 @@ func (h UserHandlers) PostUsersRefresh(c echo.Context) error {
 		Access:  access.String(),
 		Refresh: refresh.String(),
 	})
-
 }
 
 func (h UserHandlers) GetUsersTokens(ctx echo.Context, params openapi.GetUsersTokensParams) error {
@@ -65,6 +66,7 @@ func (h UserHandlers) GetUsersTokens(ctx echo.Context, params openapi.GetUsersTo
 			Error: errNoUser.Error(),
 		})
 	} else if err != nil {
+		slog.Error("internal error", slog.String("error", err.Error()))
 		return ctx.NoContent(http.StatusInternalServerError)
 	}
 

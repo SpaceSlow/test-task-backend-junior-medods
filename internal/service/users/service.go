@@ -2,6 +2,7 @@ package users
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"time"
 
@@ -34,26 +35,30 @@ func NewUserService(repo Repository, cfg Config) *UserService {
 }
 
 func (s *UserService) Tokens(userGUID uuid.UUID, ip net.IP) (*users.AccessToken, *users.RefreshToken, error) {
+	const method = "UserService.Tokens"
+
 	refresh, err := s.repo.RefreshToken(userGUID)
 	if errors.Is(err, users.ErrNoRefreshToken) {
 		refresh, err = users.NewRefreshToken()
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("%s: %w", method, err)
 		}
 		err = s.repo.CreateRefreshToken(userGUID, refresh)
 	} else if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("%s: %w", method, err)
 	}
 
 	access, err := users.NewAccessToken(ip, s.cfg.TokenLifetime(), s.cfg.SecretKey())
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("%s: %w", method, err)
 	}
 
 	return access, refresh, nil
 }
 
 func (s *UserService) RefreshTokens(access *users.AccessToken, refresh *users.RefreshToken, ip net.IP) (*users.AccessToken, *users.RefreshToken, error) {
+	const method = "UserService.RefreshTokens"
+
 	accessTokenIP, err := access.IP(s.cfg.SecretKey())
 
 	if !accessTokenIP.Equal(ip) {
@@ -65,9 +70,8 @@ func (s *UserService) RefreshTokens(access *users.AccessToken, refresh *users.Re
 	if errors.As(err, &errNoUser) {
 		return nil, nil, users.ErrInvalidRefreshToken
 	} else if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("%s: %w", method, err)
 	}
 
 	return s.Tokens(userGUID, ip)
-
 }
