@@ -38,12 +38,9 @@ func (r *PostgresRepo) CreateRefreshToken(userGUID uuid.UUID, refresh *users.Ref
 }
 
 func (r *PostgresRepo) RefreshToken(userGUID uuid.UUID) (*users.RefreshToken, error) {
-	row := r.pool.QueryRow(r.ctx, "SELECT id, refresh_token FROM users WHERE id=$1", userGUID)
-	var (
-		id           uuid.UUID
-		refreshToken string
-	)
-	err := row.Scan(&id, &refreshToken)
+	row := r.pool.QueryRow(r.ctx, "SELECT refresh_token FROM users WHERE id=$1", userGUID)
+	var refreshToken string
+	err := row.Scan(&refreshToken)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, users.NewNoUserError(userGUID)
