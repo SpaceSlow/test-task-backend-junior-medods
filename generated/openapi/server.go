@@ -13,7 +13,7 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Получение токенов по GUID-пользователя
+	// Обновление токенов
 	// (POST /users/refresh)
 	PostUsersRefresh(ctx echo.Context) error
 	// Получение токенов по GUID-пользователя

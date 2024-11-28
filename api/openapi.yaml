@@ -35,8 +35,8 @@ paths:
           description: Внутренняя ошибка сервера
   /users/refresh:
     post:
-      summary: Получение токенов по GUID-пользователя
-      description: Получение Access и Refresh токенов для пользователя с GUID
+      summary: Обновление токенов
+      description: Обновление Access и Refresh токенов
       requestBody:
         required: true
         content:
@@ -45,7 +45,7 @@ paths:
               $ref: '#/components/schemas/TokensRequest'
       responses:
         '200':
-          description: Успешное получение обновленного Access токена
+          description: Успешное получение обновленных Access и Refresh токенов
           content:
             application/json:
               schema:
