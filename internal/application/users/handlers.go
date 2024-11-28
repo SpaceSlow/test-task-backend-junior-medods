@@ -34,7 +34,7 @@ func (h UserHandlers) PostUsersRefresh(c echo.Context) error {
 			Error: err.Error(),
 		})
 	}
-	accessToken := users.AccessToken(req.Access)
+	accessToken := users.NewAccessToken(req.Access)
 	refreshToken, err := users.ParseRefreshToken(req.Refresh)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, openapi.ErrorResponse{
@@ -43,7 +43,7 @@ func (h UserHandlers) PostUsersRefresh(c echo.Context) error {
 	}
 
 	access, refresh, err := h.service.RefreshTokens(
-		&accessToken,
+		accessToken,
 		refreshToken,
 		net.ParseIP(c.RealIP()),
 	)
@@ -57,7 +57,7 @@ func (h UserHandlers) PostUsersRefresh(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, openapi.TokensResponse{
-		Access:  access.String(),
+		Access:  access.JWT(),
 		Refresh: refresh.String(),
 	})
 }
@@ -76,7 +76,7 @@ func (h UserHandlers) GetUsersTokens(ctx echo.Context, params openapi.GetUsersTo
 	}
 
 	return ctx.JSON(http.StatusOK, openapi.TokensResponse{
-		Access:  access.String(),
+		Access:  access.JWT(),
 		Refresh: refresh.String(),
 	})
 }

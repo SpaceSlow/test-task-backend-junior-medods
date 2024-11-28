@@ -12,18 +12,26 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserClaims struct {
+type accessTokenClaims struct {
 	jwt.RegisteredClaims
 	Email string `json:"email"`
 	IP    net.IP `json:"ip"`
 }
 
-type AccessToken string
+type AccessToken struct {
+	jwt   string
+	email string
+	ip    net.IP
+}
 
-func NewAccessToken(email string, ip net.IP, tokenLifetime time.Duration, secretKey string) (*AccessToken, error) {
+func NewAccessToken(jwt string) *AccessToken {
+	return &AccessToken{jwt: jwt}
+}
+
+func GenerateAccessToken(email string, ip net.IP, tokenLifetime time.Duration, secretKey string) (*AccessToken, error) {
 	const method = "NewAccessToken"
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, UserClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, accessTokenClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenLifetime)),
 		},
@@ -35,19 +43,27 @@ func NewAccessToken(email string, ip net.IP, tokenLifetime time.Duration, secret
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", method, err)
 	}
-	access := AccessToken(signedJWT)
+	access := AccessToken{jwt: signedJWT, email: email, ip: ip}
 
 	return &access, nil
 }
 
-func (t AccessToken) String() string {
-	return string(t)
+func (t AccessToken) JWT() string {
+	return t.jwt
 }
 
-func (t AccessToken) ParseIP(secretKey string) (net.IP, error) {
-	claims := &UserClaims{}
+func (t AccessToken) Email() string {
+	return t.email
+}
+
+func (t AccessToken) IP() net.IP {
+	return t.ip
+}
+
+func (t *AccessToken) Parse(secretKey string) error {
+	claims := &accessTokenClaims{}
 	token, err := jwt.ParseWithClaims(
-		t.String(),
+		t.JWT(),
 		claims,
 		func(t *jwt.Token) (interface{}, error) {
 			return []byte(secretKey), nil
@@ -55,27 +71,12 @@ func (t AccessToken) ParseIP(secretKey string) (net.IP, error) {
 		jwt.WithValidMethods([]string{"HS512"}),
 	)
 	if err != nil || !token.Valid {
-		return nil, ErrInvalidAccessToken
+		return ErrInvalidAccessToken
 	}
 
-	return claims.IP, nil
-}
-
-func (t AccessToken) ParseEmail(secretKey string) (string, error) {
-	claims := &UserClaims{}
-	token, err := jwt.ParseWithClaims(
-		t.String(),
-		claims,
-		func(t *jwt.Token) (interface{}, error) {
-			return []byte(secretKey), nil
-		},
-		jwt.WithValidMethods([]string{"HS512"}),
-	)
-	if err != nil || !token.Valid {
-		return "", ErrInvalidAccessToken
-	}
-
-	return claims.Email, nil
+	t.email = claims.Email
+	t.ip = claims.IP
+	return nil
 }
 
 type RefreshToken []byte

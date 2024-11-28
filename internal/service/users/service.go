@@ -54,7 +54,7 @@ func (s *UserService) Tokens(userGUID uuid.UUID, ip net.IP) (*users.AccessToken,
 		return nil, nil, fmt.Errorf("%s: %w", method, err)
 	}
 
-	access, err := users.NewAccessToken(email, ip, s.cfg.TokenLifetime(), s.cfg.SecretKey())
+	access, err := users.GenerateAccessToken(email, ip, s.cfg.TokenLifetime(), s.cfg.SecretKey())
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", method, err)
 	}
@@ -65,17 +65,16 @@ func (s *UserService) Tokens(userGUID uuid.UUID, ip net.IP) (*users.AccessToken,
 func (s *UserService) RefreshTokens(access *users.AccessToken, refresh *users.RefreshToken, ip net.IP) (*users.AccessToken, *users.RefreshToken, error) {
 	const method = "UserService.RefreshTokens"
 
-	accessTokenIP, err := access.ParseIP(s.cfg.SecretKey())
+	err := access.Parse(s.cfg.SecretKey())
 	if errors.Is(err, users.ErrInvalidAccessToken) {
 		return nil, nil, users.ErrInvalidAccessToken
 	}
 
-	if !accessTokenIP.Equal(ip) {
+	if !access.IP().Equal(ip) {
 		// TODO: sending warning mail
 	}
-	accessTokenEmail, err := access.ParseEmail(s.cfg.SecretKey())
 
-	user, err := s.repo.FetchUserByEmail(accessTokenEmail)
+	user, err := s.repo.FetchUserByEmail(access.Email())
 	if errors.Is(err, users.ErrNoRefreshToken) {
 		return nil, nil, users.ErrNoRefreshToken
 	} else if err != nil {
