@@ -50,6 +50,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokensResponse'
+        '400':
+          description: Ошибки, связанные с неправильными полями
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Ошибки, связанные с токенами
           content:
