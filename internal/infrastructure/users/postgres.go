@@ -33,45 +33,43 @@ func NewPostgresRepo(ctx context.Context, dsn string) (*PostgresRepo, error) {
 func (r *PostgresRepo) CreateRefreshToken(userGUID uuid.UUID, refresh *users.RefreshToken) error {
 	const method = "PostgresRepo.CreateRefreshToken"
 
-	hash, err := refresh.Hash()
+	hash, err := refresh.GenerateHash()
 	if err != nil {
 		return fmt.Errorf("%s: %w", method, err)
 	}
-	_, err = r.pool.Exec(r.ctx, "UPDATE users SET refresh_token=$1 WHERE id=$2", hash, userGUID)
+	_, err = r.pool.Exec(r.ctx, `UPDATE users SET refresh_token=$1 WHERE id=$2`, hash, userGUID)
 	return err
 }
 
-func (r *PostgresRepo) RefreshToken(userGUID uuid.UUID) (*users.RefreshToken, error) {
-	const method = "PostgresRepo.RefreshToken"
+func (r *PostgresRepo) EmailByUUID(userGUID uuid.UUID) (string, error) {
+	const method = "PostgresRepo.EmailByUUID"
 
-	row := r.pool.QueryRow(r.ctx, "SELECT refresh_token FROM users WHERE id=$1", userGUID)
-	var refreshToken string
-	err := row.Scan(&refreshToken)
+	row := r.pool.QueryRow(r.ctx, `SELECT email FROM users WHERE id=$1`, userGUID)
+	var email string
+	err := row.Scan(&email)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", method, err)
+	}
+	return email, err
+}
+
+func (r *PostgresRepo) UserByEmail(email string) (*users.User, error) {
+	const method = "PostgresRepo.UserByEmail"
+
+	row := r.pool.QueryRow(r.ctx, `SELECT id, refresh_token FROM users WHERE email=$1`, email)
+	var (
+		userGUID         uuid.UUID
+		refreshTokenHash string
+	)
+	err := row.Scan(&userGUID, &refreshTokenHash)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, users.NewNoUserError(userGUID)
+		return nil, users.ErrNoRefreshToken
 	} else if err != nil {
 		return nil, fmt.Errorf("%s: %w", method, err)
 	}
-	refresh := users.RefreshToken(refreshToken)
 
-	return &refresh, nil
-}
-
-func (r *PostgresRepo) UserGUID(refresh *users.RefreshToken) (uuid.UUID, error) {
-	const method = "PostgresRepo.UserGUID"
-
-	row := r.pool.QueryRow(r.ctx, "SELECT id FROM users WHERE refresh_token=$1", refresh.String())
-	var userGUID uuid.UUID
-	err := row.Scan(&userGUID)
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		return uuid.Nil, users.ErrNoRefreshToken
-	} else if err != nil {
-		return uuid.Nil, fmt.Errorf("%s: %w", method, err)
-	}
-
-	return userGUID, nil
+	return users.NewUser(userGUID, email, refreshTokenHash), nil
 }
 
 func (r *PostgresRepo) Close() {

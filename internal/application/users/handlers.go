@@ -35,14 +35,19 @@ func (h UserHandlers) PostUsersRefresh(c echo.Context) error {
 		})
 	}
 	accessToken := users.AccessToken(req.Access)
-	refreshToken := users.RefreshToken(req.Refresh)
+	refreshToken, err := users.ParseRefreshToken(req.Refresh)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, openapi.ErrorResponse{
+			Error: err.Error(),
+		})
+	}
 
 	access, refresh, err := h.service.RefreshTokens(
 		&accessToken,
-		&refreshToken,
+		refreshToken,
 		net.ParseIP(c.RealIP()),
 	)
-	if errors.Is(err, users.ErrNoRefreshToken) {
+	if errors.Is(errors.Join(users.ErrNoRefreshToken, users.ErrInvalidAccessToken, users.ErrInvalidRefreshToken), err) {
 		return c.JSON(http.StatusUnauthorized, openapi.ErrorResponse{
 			Error: err.Error(),
 		})
