@@ -11,7 +11,7 @@ import (
 )
 
 type Repository interface {
-	CreateRefreshToken(userGUID uuid.UUID, hash string) error
+	CreateRefreshToken(userGUID uuid.UUID, refresh *users.RefreshToken) error
 	RefreshToken(userGUID uuid.UUID) (*users.RefreshToken, error)
 }
 
@@ -39,11 +39,7 @@ func (s *UserService) Tokens(userGUID uuid.UUID, ip net.IP) (*users.AccessToken,
 		if err != nil {
 			return nil, nil, err
 		}
-		hash, err := refresh.Hash()
-		if err != nil {
-			return nil, nil, err
-		}
-		err = s.repo.CreateRefreshToken(userGUID, string(hash))
+		err = s.repo.CreateRefreshToken(userGUID, refresh)
 	} else if err != nil {
 		return nil, nil, err
 	}

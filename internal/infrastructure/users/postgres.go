@@ -28,8 +28,12 @@ func NewPostgresRepo(ctx context.Context, dsn string) (*PostgresRepo, error) {
 	}, nil
 }
 
-func (r *PostgresRepo) CreateRefreshToken(userGUID uuid.UUID, hash string) error {
-	_, err := r.pool.Exec(r.ctx, "UPDATE users SET refresh_token=$1 WHERE id=$2", hash, userGUID)
+func (r *PostgresRepo) CreateRefreshToken(userGUID uuid.UUID, refresh *users.RefreshToken) error {
+	hash, err := refresh.Hash()
+	if err != nil {
+		return err
+	}
+	_, err = r.pool.Exec(r.ctx, "UPDATE users SET refresh_token=$1 WHERE id=$2", hash, userGUID)
 	return err
 }
 
