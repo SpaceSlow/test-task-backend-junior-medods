@@ -14,8 +14,8 @@ import (
 
 type Repository interface {
 	CreateRefreshToken(userGUID uuid.UUID, refresh *users.RefreshToken) error
-	EmailByUUID(userGUID uuid.UUID) (string, error)
-	UserByEmail(email string) (*users.User, error)
+	FetchEmailByUUID(userGUID uuid.UUID) (string, error)
+	FetchUserByEmail(email string) (*users.User, error)
 }
 
 type Config interface {
@@ -38,7 +38,7 @@ func NewUserService(repo Repository, cfg Config) *UserService {
 func (s *UserService) Tokens(userGUID uuid.UUID, ip net.IP) (*users.AccessToken, *users.RefreshToken, error) {
 	const method = "UserService.Tokens"
 
-	email, err := s.repo.EmailByUUID(userGUID)
+	email, err := s.repo.FetchEmailByUUID(userGUID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil, users.NewNoUserError(userGUID)
 	} else if err != nil {
@@ -75,7 +75,7 @@ func (s *UserService) RefreshTokens(access *users.AccessToken, refresh *users.Re
 	}
 	accessTokenEmail, err := access.ParseEmail(s.cfg.SecretKey())
 
-	user, err := s.repo.UserByEmail(accessTokenEmail)
+	user, err := s.repo.FetchUserByEmail(accessTokenEmail)
 	if errors.Is(err, users.ErrNoRefreshToken) {
 		return nil, nil, users.ErrNoRefreshToken
 	} else if err != nil {

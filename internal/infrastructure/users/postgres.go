@@ -41,8 +41,8 @@ func (r *PostgresRepo) CreateRefreshToken(userGUID uuid.UUID, refresh *users.Ref
 	return err
 }
 
-func (r *PostgresRepo) EmailByUUID(userGUID uuid.UUID) (string, error) {
-	const method = "PostgresRepo.EmailByUUID"
+func (r *PostgresRepo) FetchEmailByUUID(userGUID uuid.UUID) (string, error) {
+	const method = "PostgresRepo.FetchEmailByUUID"
 
 	row := r.pool.QueryRow(r.ctx, `SELECT email FROM users WHERE id=$1`, userGUID)
 	var email string
@@ -53,8 +53,8 @@ func (r *PostgresRepo) EmailByUUID(userGUID uuid.UUID) (string, error) {
 	return email, err
 }
 
-func (r *PostgresRepo) UserByEmail(email string) (*users.User, error) {
-	const method = "PostgresRepo.UserByEmail"
+func (r *PostgresRepo) FetchUserByEmail(email string) (*users.User, error) {
+	const method = "PostgresRepo.FetchUserByEmail"
 
 	row := r.pool.QueryRow(r.ctx, `SELECT id, refresh_token FROM users WHERE email=$1`, email)
 	var (
