@@ -52,6 +52,20 @@ func (r *PostgresRepo) RefreshToken(userGUID uuid.UUID) (*users.RefreshToken, er
 	return &refresh, nil
 }
 
+func (r *PostgresRepo) UserGUID(refresh *users.RefreshToken) (uuid.UUID, error) {
+	row := r.pool.QueryRow(r.ctx, "SELECT id FROM users WHERE refresh_token=$1", refresh.String())
+	var userGUID uuid.UUID
+	err := row.Scan(&userGUID)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return uuid.Nil, users.ErrNoRefreshToken
+	} else if err != nil {
+		return uuid.Nil, err
+	}
+
+	return userGUID, nil
+}
+
 func (r *PostgresRepo) Close() {
 	r.pool.Close()
 }

@@ -13,6 +13,7 @@ import (
 type Repository interface {
 	CreateRefreshToken(userGUID uuid.UUID, refresh *users.RefreshToken) error
 	RefreshToken(userGUID uuid.UUID) (*users.RefreshToken, error)
+	UserGUID(*users.RefreshToken) (uuid.UUID, error)
 }
 
 type Config interface {
@@ -50,4 +51,23 @@ func (s *UserService) Tokens(userGUID uuid.UUID, ip net.IP) (*users.AccessToken,
 	}
 
 	return access, refresh, nil
+}
+
+func (s *UserService) RefreshTokens(access *users.AccessToken, refresh *users.RefreshToken, ip net.IP) (*users.AccessToken, *users.RefreshToken, error) {
+	accessTokenIP, err := access.IP(s.cfg.SecretKey())
+
+	if !accessTokenIP.Equal(ip) {
+		// TODO: sending warning mail
+	}
+
+	userGUID, err := s.repo.UserGUID(refresh)
+	var errNoUser users.NoUserError
+	if errors.As(err, &errNoUser) {
+		return nil, nil, users.ErrInvalidRefreshToken
+	} else if err != nil {
+		return nil, nil, err
+	}
+
+	return s.Tokens(userGUID, ip)
+
 }

@@ -38,6 +38,27 @@ func (t AccessToken) String() string {
 	return string(t)
 }
 
+func (t AccessToken) IP(secretKey string) (net.IP, error) {
+	claims := &UserClaims{}
+	token, err := jwt.ParseWithClaims(
+		t.String(),
+		claims,
+		func(t *jwt.Token) (interface{}, error) {
+			return []byte(secretKey), nil
+		},
+		jwt.WithValidMethods([]string{"HS512"}),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, ErrInvalidAccessToken
+	}
+
+	return claims.IP, nil
+}
+
 type RefreshToken string
 
 func NewRefreshToken() (*RefreshToken, error) {

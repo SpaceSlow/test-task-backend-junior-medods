@@ -14,6 +14,7 @@ import (
 
 type UserService interface {
 	Tokens(userGUID uuid.UUID, ip net.IP) (*users.AccessToken, *users.RefreshToken, error)
+	RefreshTokens(access *users.AccessToken, refresh *users.RefreshToken, ip net.IP) (*users.AccessToken, *users.RefreshToken, error)
 }
 
 type UserHandlers struct {
@@ -24,9 +25,35 @@ func SetupHandlers(userService UserService) UserHandlers {
 	return UserHandlers{service: userService}
 }
 
-func (h UserHandlers) PostUsersRefresh(ctx echo.Context) error {
-	//TODO implement me
-	panic("implement me")
+func (h UserHandlers) PostUsersRefresh(c echo.Context) error {
+	var req openapi.TokensRequest
+	err := c.Bind(&req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.ErrorResponse{
+			Error: err.Error(),
+		})
+	}
+	accessToken := users.AccessToken(req.Access)
+	refreshToken := users.RefreshToken(req.Refresh)
+
+	access, refresh, err := h.service.RefreshTokens(
+		&accessToken,
+		&refreshToken,
+		net.ParseIP(c.RealIP()),
+	)
+	if errors.Is(err, users.ErrNoRefreshToken) {
+		return c.JSON(http.StatusUnauthorized, openapi.ErrorResponse{
+			Error: err.Error(),
+		})
+	} else if err != nil {
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	return c.JSON(http.StatusOK, openapi.TokensResponse{
+		Access:  access.String(),
+		Refresh: refresh.String(),
+	})
+
 }
 
 func (h UserHandlers) GetUsersTokens(ctx echo.Context, params openapi.GetUsersTokensParams) error {

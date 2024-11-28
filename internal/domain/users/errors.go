@@ -8,6 +8,8 @@ import (
 )
 
 var ErrNoRefreshToken = errors.New("refresh token not exist")
+var ErrInvalidRefreshToken = errors.New("refresh token is not valid")
+var ErrInvalidAccessToken = errors.New("access token is not valid")
 
 type NoUserError struct {
 	GUID uuid.UUID
