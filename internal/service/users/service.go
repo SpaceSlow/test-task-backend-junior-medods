@@ -13,16 +13,19 @@ import (
 	"github.com/SpaceSlow/test-task-backend-junior-medods/internal/domain/users"
 )
 
+//go:generate go run github.com/vektra/mockery/v2@v2.49.1 --name Repository --case=underscore
 type Repository interface {
 	CreateRefreshToken(userGUID uuid.UUID, refresh *users.RefreshToken) error
 	FetchEmailByUUID(userGUID uuid.UUID) (string, error)
 	FetchUserByEmail(email string) (*users.User, error)
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.49.1 --name NotifierService --case=underscore
 type NotifierService interface {
 	SendSuspiciousActivityMail(email string, newIP net.IP) error
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.49.1 --name Config --case=underscore
 type Config interface {
 	TokenLifetime() time.Duration
 	SecretKey() string
