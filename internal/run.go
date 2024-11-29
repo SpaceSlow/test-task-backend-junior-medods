@@ -13,6 +13,7 @@ import (
 
 	"github.com/SpaceSlow/test-task-backend-junior-medods/internal/application"
 	usersrepo "github.com/SpaceSlow/test-task-backend-junior-medods/internal/infrastructure/users"
+	"github.com/SpaceSlow/test-task-backend-junior-medods/internal/service/notifier"
 	"github.com/SpaceSlow/test-task-backend-junior-medods/internal/service/users"
 )
 
@@ -44,7 +45,9 @@ func RunServer() error {
 		return nil
 	})
 
-	userService := users.NewUserService(repo, cfg)
+	notifierService := notifier.NewSMTPNotifierService(cfg)
+
+	userService := users.NewUserService(repo, notifierService, cfg)
 
 	httpServer := application.SetupHTTPServer(userService)
 	srv := &http.Server{

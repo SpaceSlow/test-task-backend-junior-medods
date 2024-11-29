@@ -3,6 +3,7 @@ package users
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"time"
 
@@ -18,20 +19,26 @@ type Repository interface {
 	FetchUserByEmail(email string) (*users.User, error)
 }
 
+type NotifierService interface {
+	SendSuspiciousActivityMail(email string, newIP net.IP) error
+}
+
 type Config interface {
 	TokenLifetime() time.Duration
 	SecretKey() string
 }
 
 type UserService struct {
-	repo Repository
-	cfg  Config
+	repo            Repository
+	notifierService NotifierService
+	cfg             Config
 }
 
-func NewUserService(repo Repository, cfg Config) *UserService {
+func NewUserService(repo Repository, notifierService NotifierService, cfg Config) *UserService {
 	return &UserService{
-		repo: repo,
-		cfg:  cfg,
+		repo:            repo,
+		notifierService: notifierService,
+		cfg:             cfg,
 	}
 }
 
@@ -71,7 +78,10 @@ func (s *UserService) RefreshTokens(access *users.AccessToken, refresh *users.Re
 	}
 
 	if !access.IP().Equal(ip) {
-		// TODO: sending warning mail
+		err := s.notifierService.SendSuspiciousActivityMail(access.Email(), ip)
+		if err != nil {
+			slog.Error("internal error", slog.String("error", fmt.Sprintf("%s: %s", method, err)))
+		}
 	}
 
 	user, err := s.repo.FetchUserByEmail(access.Email())

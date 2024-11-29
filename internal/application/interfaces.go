@@ -12,3 +12,7 @@ type UserService interface {
 	Tokens(userGUID uuid.UUID, ip net.IP) (*users.AccessToken, *users.RefreshToken, error)
 	RefreshTokens(access *users.AccessToken, refresh *users.RefreshToken, ip net.IP) (*users.AccessToken, *users.RefreshToken, error)
 }
+
+type NotifierService interface {
+	SendSuspiciousActivityMail(email string, newIP net.IP) error
+}
