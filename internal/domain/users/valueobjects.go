@@ -29,7 +29,7 @@ func NewAccessToken(jwt string) *AccessToken {
 }
 
 func GenerateAccessToken(email string, ip net.IP, tokenLifetime time.Duration, secretKey string) (*AccessToken, error) {
-	const method = "NewAccessToken"
+	const method = "GenerateAccessToken"
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, accessTokenClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
